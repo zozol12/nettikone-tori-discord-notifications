@@ -1,0 +1,11 @@
+# Ignore Visual Studio Code settings folder
+.vscode/
+
+# Ignore virtual environment folder
+myenv/
+
+# Ignore Python cache folder
+__pycache__/
+
+# Ignore SQLite database file
+listings.db

@@ -1,0 +1,22 @@
+{
+    "listing_urls": [
+        "https://autot.tori.fi/kuljetuskalusto-ja-raskas-kalusto/myydaan?alusta_2=zetor,ursus,porsche,john-deere,claas,new-holland,sampo-rosenlew,deutz-fahr,massey-ferguson,valtra"
+    ],
+    "makes": [
+        "zetor",
+        "ursus",
+        "porsche",
+        "john-deere",
+        "claas",
+        "new-holland",
+        "sampo-rosenlew",
+        "deutz-fahr",
+        "massey-ferguson",
+        "valtra"
+    ],
+    "bot_token": "your_bot_token_here",
+    "channel_id": "channel id where bot will send notifications",
+    "netti_login": "login to nettikone",
+    "netti_pass": "password to nettikone",
+    "delay": 10
+}
