@@ -41,37 +41,40 @@ class Listing(Base):
     img_url = Column(String)
 
     def __init__(self, data, listing_type='html'):
-        if listing_type == 'json':
-            self.title = data.get('title', 'N/A')
-            self.price = data.get('price', 'N/A')
-            self.details = data.get('details', 'N/A')
-            self.link = data.get('link', 'N/A')
-            self.img_url = data.get('img_url', 'N/A')
-        elif listing_type == 'html':
-            soup = BeautifulSoup(data, 'html.parser')
-            # Get the title of the listing
-            title_element = soup.find(
-                'h2', class_='mb-1 truncate typography_shared__SK_V2 typography_m-headingS__ozYY8 typography_subtitle2__nF6ow')
-            self.title = title_element.text.strip() if title_element else 'N/A'
-            # Get the price of the listing
-            price_element = soup.find(
-                'p', class_='m:mb-4 typography_shared__SK_V2 typography_m-headingS__ozYY8 typography_subtitle2__nF6ow')
-            self.price = price_element.text.strip() if price_element else 'N/A'
-            # Get the details of the listing
-            details_element = soup.find(
-                'p', class_='mb-2 m:mb-4 text-gray-dark truncate typography_shared__SK_V2 typography_m-body1__5__iP typography_caption__Cf12X')
-            self.details = details_element.text.strip() if details_element else 'N/A'
-            # Get the link to the listing
-            link_element = soup.find(
-                'a', class_='adCard_anchor__hJqwV adCardImageCarousel_snapCarousel___axZ8 m:rounded-bl-lg')
-            self.link = 'https://autot.tori.fi' + \
-                link_element['href'].strip() if link_element else 'N/A'
-            # Get the image URL for the listing
-            try:
-                self.img_url = soup.find(
-                    'img', class_='adCardImageCarousel_image__PzAHL')['src']
-            except:
-                self.img_url = 'N/A'
+        try:
+            if listing_type == 'json':
+                self.title = data.get('title', None)
+                self.price = data.get('price', None)
+                self.details = data.get('details', None)
+                self.link = data.get('link', None)
+                self.img_url = data.get('img_url', None)
+            elif listing_type == 'html':
+                soup = BeautifulSoup(data, 'html.parser')
+                # Get the title of the listing
+                title_element = soup.find(
+                    'h2', class_='mb-1 truncate typography_shared__SK_V2 typography_m-headingS__ozYY8 typography_subtitle2__nF6ow')
+                self.title = title_element.text.strip() if title_element else None
+                # Get the price of the listing
+                price_element = soup.find(
+                    'p', class_='m:mb-4 typography_shared__SK_V2 typography_m-headingS__ozYY8 typography_subtitle2__nF6ow')
+                self.price = price_element.text.strip() if price_element else None
+                # Get the details of the listing
+                details_element = soup.find(
+                    'p', class_='mb-2 m:mb-4 text-gray-dark truncate typography_shared__SK_V2 typography_m-body1__5__iP typography_caption__Cf12X')
+                self.details = details_element.text.strip() if details_element else None
+                # Get the link to the listing
+                link_element = soup.find(
+                    'a', class_='adCard_anchor__DXpKR block px-2 py-2 m:py-4 m:px-4 l-px-6')
+                self.link = 'https://autot.tori.fi' + \
+                    link_element['href'].strip() if link_element else None
+                # Get the image URL for the listing
+                try:
+                    self.img_url = soup.find(
+                        'img', class_='adCardImageCarousel_image__PzAHL')['src']
+                except:
+                    self.img_url = None
+        except Exception as e:
+            logging.error(f"Error while parsing listing data: {e}")
 
     def is_valid(self):
         """Check if the listing is valid."""
@@ -140,6 +143,7 @@ class ScraperBase:
                 self.config = json.load(config_file)
         except FileNotFoundError:
             logging.error(f"Config file '{self.config_file}' not found.")
+            # Initialize an empty dictionary if the config file is not found.
             self.config = {}
 
     def scrape_listings(self):
@@ -148,9 +152,9 @@ class ScraperBase:
 
     def scrape_url(self, url):
         """Scrape listings from a URL and add new listings to the repository."""
-        logging.info(f"Scraping URL: {url}")
+        logging.debug(f"Scraping URL: {url}")
         response = requests.get(url)
-        logging.info(f"Response status code: {response.status_code}")
+        logging.debug(f"Response status code: {response.status_code}")
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
             listing_elements = soup.find_all('div', class_='w-full p-2')
@@ -192,8 +196,8 @@ class ToriScraper(ScraperBase):
     def scrape_url(self, url):
         """Scrape listings from a Tori URL and add new listings to the repository."""
         response = requests.get(url)
-        logging.info(f"Scraping Tori URL: {url}")
-        logging.info(f"Response status code: {response.status_code}")
+        logging.debug(f"Scraping Tori URL: {url}")
+        logging.debug(f"Response status code: {response.status_code}")
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
             listing_elements = soup.find_all('div', class_='w-full p-2')
@@ -214,15 +218,15 @@ class NettikoneScraper(ScraperBase):
         makes (list): List of makes to filter listings.
         config_file (str): Path to the configuration file.
         db_connection_string (str): Database connection string.
+        request_params (dict): Request parameters to configure the HTTP request's query parameters.
     """
 
-    def __init__(self, api_key, makes=None, *args, **kwargs):
+    def __init__(self, api_key, makes=None, request_params=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.api_key = api_key
         self.base_url = 'https://api.nettix.fi/rest/machine/search'
-        self.headers = {
-            'X-Access-Token': self.api_key,
-        }
+        self.request_params = request_params or {}
+        self.headers = {'X-Access-Token': self.api_key}
         self.makes = makes if makes else None
 
     def scrape_listings(self):
@@ -233,17 +237,20 @@ class NettikoneScraper(ScraperBase):
             'status': ['forsale'],
             'categories': [1, 2],
             'sortBy': 'dateCreated',
-            'sortOrder': 'asc',
+            'sortOrder': 'desc',
             'includeMakeModel': True,
         }
 
         if self.makes:
             params['make'] = self.makes
 
+        # Update the default params with the provided request_params
+        params.update(self.request_params)
+
         try:
             response = requests.get(
                 self.base_url, headers=self.headers, params=params)
-            logging.info(
+            logging.debug(
                 f"Nettikone API Response status code: {response.status_code}")
 
             if response.status_code == 200:
@@ -264,7 +271,8 @@ class NettikoneScraper(ScraperBase):
                     self.new_listings.extend(listings)
             else:
                 logging.error(
-                    f"Failed to retrieve Nettikone data. Status code: {response.status_code}")
+                    f"Failed to retrieve Nettikone data. Status code: {response.status_code}\n\
+                        {response.content}")
         except requests.exceptions.RequestException as e:
             logging.error(f"Error during Nettikone request: {e}")
 
@@ -290,7 +298,7 @@ def get_nettikone_api_token(username, password):
     try:
         # Disable SSL certificate verification
         response = requests.post(token_url, data=data, verify=False)
-        logging.info(
+        logging.debug(
             f"Nettikone API Token Response status code: {response.status_code}")
         response.raise_for_status()
         token_data = response.json()

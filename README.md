@@ -9,7 +9,7 @@
 
 ## Description
 
-This repository contains a Python library for scraping the latest listings from Nettikone and Tori, saving them to an SQLite database, along with a Discord bot that sends notifications about new listings.
+This repository contains a Python library for scraping the latest listings from Nettikone and Tori autot, saving them to an SQLite database, along with a Discord bot that sends notifications about new listings.
 
 **It was originally created for personal use, but I thought maybe it can be handy for someone too.**
 
@@ -18,7 +18,7 @@ The library is somewhat hard-coded and not as configurable as it should be, but 
 ### Features
 
 - **Scrape Nettikone:** Retrieve listings of vehicles and equipment from Nettikone based on various criteria.
-- **Scrape Tori:** Fetch listings of vehicles and equipment from Tori.fi based on your preferences.
+- **Scrape Tori autot:** Fetch listings of vehicles and equipment from Tori.fi based on your preferences.
 - **Discord Notifications:** Receive notifications in a Discord channel when new listings are found.
 - **Customizable:** Configure the bot to search for specific makes and models.
 

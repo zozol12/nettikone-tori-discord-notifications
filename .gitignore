@@ -9,3 +9,6 @@ __pycache__/
 
 # Ignore SQLite database file
 listings.db
+
+# Ignore my personal config lol
+config.json
