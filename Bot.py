@@ -26,7 +26,6 @@ except FileNotFoundError:
 makes = config_data.get('makes', [])
 bot_token = config_data.get('bot_token', '')
 channel_id = config_data.get('channel_id', 0)
-print(channel_id)
 api_token = config_data.get('api_token', '')
 netti_login = config_data.get('netti_login', '')
 netti_pass = config_data.get('netti_pass', '')
@@ -67,31 +66,43 @@ async def on_ready():
 @tasks.loop(seconds=delay)  # Adjust the interval as needed
 async def scrape_and_notify():
     """Background task to scrape listings and send notifications."""
-    global makes
-    try:
-        tori_scraper.scrape_listings()
-        nettikone_scraper.scrape_listings()
+    # Scrape Nettikone listings
+    nettikone_scraper.scrape_listings()
+    logging.info(f'New Nettikone listings found: {len(nettikone_scraper.new_listings)}')
 
-        # Combine new listings from both scrapers
-        all_new_listings = tori_scraper.new_listings + nettikone_scraper.new_listings
-        logging.info(f'New listings found: {len(all_new_listings)}')
+    # Send Nettikone notifications
+    channel = bot.get_channel(channel_id)
+    
+    for listing in nettikone_scraper.new_listings:
+        embed = discord.Embed(
+            title="New Nettikone Listing",
+            description=f"Title: {listing.title}\nPrice: {listing.price}\nLink: {listing.link}"
+        )
+        if listing.img_url:
+            embed.set_thumbnail(url=listing.img_url)
+        await channel.send(embed=embed)
 
-        # Send notifications to the specified Discord channel
-        channel = bot.get_channel(channel_id)
-        for listing in all_new_listings:
-            # Add a source attribute to the Listing object
-            listing.source = 'Tori' if listing in tori_scraper.new_listings else 'Nettikone'
-            
-            embed = discord.Embed(
-                title="New Listing", description=f"Title: {listing.title}\nPrice: {listing.price}\nLink: {listing.link}\nSource: {listing.source}")
-            if listing.img_url:
-                embed.set_thumbnail(url=listing.img_url)
-            await channel.send(embed=embed)
+    # Save Nettikone listings
+    nettikone_scraper.save_listings()
 
-        tori_scraper.save_listings()
-        nettikone_scraper.save_listings()
-    except Exception as e:
-        logging.error(f"An error occurred during scraping: {e}")
+    # Scrape Tori listings
+    tori_scraper.scrape_listings()
+    logging.info(f'New Tori listings found: {len(tori_scraper.new_listings)}')
+
+    # Send Tori notifications
+    for listing in tori_scraper.new_listings:
+        embed = discord.Embed(
+            title="New Tori Listing",
+            description=f"Title: {listing.title}\nPrice: {listing.price}\nLink: {listing.link}"
+        )
+        if listing.img_url:
+            embed.set_thumbnail(url=listing.img_url)
+        await channel.send(embed=embed)
+
+    # Save Tori listings
+    tori_scraper.save_listings()
+        
+
 
 
 

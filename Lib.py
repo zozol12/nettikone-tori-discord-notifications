@@ -234,20 +234,19 @@ class NettikoneScraper(ScraperBase):
         params = {
             'page': 1,
             'rows': 30,
-            'status': ['forsale'],
-            'categories': [1, 2],
-            'sortBy': 'dateCreated',
-            'sortOrder': 'desc',
-            'includeMakeModel': True,
+            'status': 'forsale',
+            'sortOrder': 'desc'
         }
 
         if self.makes:
-            params['make'] = self.makes
+            makes_str = ','.join(self.makes)
+            params['make'] = makes_str
 
         # Update the default params with the provided request_params
         params.update(self.request_params)
 
         try:
+            
             response = requests.get(
                 self.base_url, headers=self.headers, params=params)
             logging.debug(
@@ -255,7 +254,6 @@ class NettikoneScraper(ScraperBase):
 
             if response.status_code == 200:
                 data = response.json()
-                listings = []
 
                 for item in data:
                     listing_data = {
@@ -265,10 +263,11 @@ class NettikoneScraper(ScraperBase):
                         'img_url': item['images'][0]['smallThumbnail']['url'] if 'images' in item and len(item['images']) > 0 else None,
                         'details': item['model'],
                     }
-                    listing = Listing(listing_data, listing_type='json')
-                    listings.append(listing)
-                if listing.is_valid() and listing.link not in self.repository.get_all_links():
-                    self.new_listings.extend(listings)
+                    if item['adUrl'] not in self.repository.get_all_links():
+                        listing = Listing(listing_data, listing_type='json')
+                        logging.debug(listing)
+                        if listing.is_valid():
+                            self.new_listings.append(listing)
             else:
                 logging.error(
                     f"Failed to retrieve Nettikone data. Status code: {response.status_code}\n\

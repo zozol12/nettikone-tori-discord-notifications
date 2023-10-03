@@ -25,8 +25,8 @@ def get_make_id(make_name):
     lower_make_name = make_name.lower()
     for make in netti_makes:
         if make["name"].lower() == lower_make_name:
-            return make["id"]
-    return None
+            return str(make["id"])
+    return '0'
 
 
 def get_make_ids(make_names):
@@ -37,7 +37,7 @@ def get_make_ids(make_names):
         make_names (list of str): List of make names.
 
     Returns:
-        list of int: List of make IDs.
+        list of str: List of make IDs.
     """
     return [get_make_id(name) for name in make_names]
 
